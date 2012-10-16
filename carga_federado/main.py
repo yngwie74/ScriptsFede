@@ -20,7 +20,7 @@ _CS_OKW     = "Data Source=localhost;Initial Catalog=OKW;Persist Security Info=T
 _PRG_NAME   = 'carga_federado'
 
 def syntax():
-    ayuda = u'''\
+    ayuda = u'''
 %s [/rate:[<porcentaje>]] [/huge]
 donde:
 \t/rate\tIndica el porcentaje de carga a generar con respecto a

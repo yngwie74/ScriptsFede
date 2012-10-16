@@ -1,0 +1,62 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{81114DC2-1AD8-4437-9AE9-48E3ACF573BA}</ProjectGuid>
+    <ProjectHome>C:\Users\alfredo.chavez\Proyectos\IronPython\Federado\carga_federado</ProjectHome>
+    <StartupFile>C:\Users\alfredo.chavez\Proyectos\IronPython\Federado\carga_federado\main.py</StartupFile>
+    <SearchPath>C:\Users\alfredo.chavez\Proyectos\Medtzin\Comunes;C:\Users\alfredo.chavez\Proyectos\Medtzin\Lib_ext</SearchPath>
+    <WorkingDirectory>.</WorkingDirectory>
+    <AssemblyName>comparacion_expedientes</AssemblyName>
+    <Name>comparacion_expedientes</Name>
+    <RootNamespace>comparacion_expedientes</RootNamespace>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <ItemGroup>
+    <SearchPath Include="C:\Users\alfredo.chavez\Proyectos\Medtzin\Comunes\" />
+    <SearchPath Include="C:\Users\alfredo.chavez\Proyectos\Medtzin\Lib_ext\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="DAO">
+      <HintPath>C:\Users\alfredo.chavez\Proyectos\Medtzin\Comunes\DAO.dll</HintPath>
+    </Reference>
+    <Reference Include="Entities">
+      <HintPath>C:\Users\alfredo.chavez\Proyectos\Medtzin\Comunes\Entities.dll</HintPath>
+    </Reference>
+    <Reference Include="IronPython">
+      <HintPath>C:\IronPython27\IronPython.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="IronPython.Modules">
+      <HintPath>C:\IronPython27\IronPython.Modules.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.Dynamic">
+      <HintPath>C:\IronPython27\Microsoft.Dynamic.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.Scripting">
+      <HintPath>C:\IronPython27\Microsoft.Scripting.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>C:\Users\alfredo.chavez\Proyectos\Medtzin\Lib_ext\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="main.py" />
+    <Compile Include="script.py" />
+    <Compile Include="utils.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+  </ItemGroup>
+</Project>
