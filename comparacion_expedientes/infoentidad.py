@@ -42,23 +42,18 @@ class OkwQueries:
     K_PROCEDIMIENTO_PACIENTE = 'select * from OKW.K_PROCEDIMIENTO_PACIENTE where FL_PACIENTE = {0} order by FL_PROCEDIMIENTO_PACIENTE'
     K_VACUNA_PACIENTE = 'select * from OKW.K_VACUNA_PACIENTE where FL_PACIENTE = {0} order by FL_VACUNA_PACIENTE'
 
-
 class SomatQueries:
     K_SOMATOMETRIA = 'select * from SOMATOMT.K_SOMATOMETRIA where FL_PACIENTE = {0} order by FL_SOMATOMETRIA'
     K_SOMATOMETRIA_DETALLE = 'select * from SOMATOMT.K_SOMATOMETRIA_DETALLE where FL_SOMATOMETRIA in (select distinct FL_SOMATOMETRIA from SOMATOMT.K_SOMATOMETRIA where FL_PACIENTE = {0}) order by FL_SOMATOMETRIA ,FL_SOMATOMETRIA_DETALLE'
 
-
 def _mk_key(key_name):
     return lambda data: '%s = %r' % (key_name, getattr(data, key_name))
-
 
 def _mk_multikey(key_names):
     keys = map(_mk_key, key_names)
     return lambda data: '(%s)' % ', '.join(k(data) for k in keys)
 
-
 _ignore_by_default = ['FG_REPLICADO']
-
 
 class EntidadInfo(object):
 
@@ -81,13 +76,11 @@ class EntidadInfo(object):
         return prop_name.isupper() \
            and ('_' in prop_name) \
            and not (
-               prop_name.startswith('_') or
                prop_name.startswith('C_') or
                prop_name.startswith('K_') or
                prop_name in self.ignored
                )
 # end class EntidadInfo
-
 
 INFO_ENTIDADES = {
     'OKW' : (

@@ -67,6 +67,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="comp.py" />
+    <Compile Include="data.py" />
     <Compile Include="infoentidad.py" />
     <Compile Include="main.py" />
   </ItemGroup>

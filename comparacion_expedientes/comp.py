@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from infoentidad import INFO_ENTIDADES
+from itertools import izip
 
 def _ifnone(a):
     return a if not a is None else '<NULL>'
@@ -9,46 +10,78 @@ def _ifnone(a):
 def _comp_error(prop_name, a, b):
     return u'\t%s:\t[%s] != [%s]' % (prop_name, _ifnone(a), _ifnone(b))
 
-
-def _print_errors(entidad, errores, source):
-    if errores:
-        errores.sort()
-        print 'Diferencias en %s, con %s:' % (entidad.type_name, entidad.llave(source))
-        print '\n'.join(error for error in errores)
-
+def _should_compare(p, a, b):
+    return not (p.startswith('_')
+             or (hasattr(a, p) and callable(getattr(a, p)))
+             or (hasattr(b, p) and callable(getattr(b, p))))
 
 def _mk_property_pairs(source, reference, entity):
     return ((getattr(source, p), getattr(reference, p), p)
-            for p in dir(source)
-                if entity.debe_comparar(p) and
-                    hasattr(source, p) and
-                    hasattr(reference, p))
+            for p in set(dir(source)) | set(dir(reference))
+                if _should_compare(p, source, reference)
+                    and entity.debe_comparar(p)
+                    and hasattr(source, p)
+                    and hasattr(reference, p))
 
-def _comp_record(source, reference, entidad):
-    pairs = _mk_property_pairs(source, reference, entidad)
-    errors = [_comp_error(p, a, b) for (a, b, p) in pairs if a != b]
-    _print_errors(entidad, errors, source)
-    return not errors
+def _error_list(errors, sep='\n'):
+    return sep.join(errors)
 
-def _comp_all_records(_fl_paciente, src_context, ref_context, entidad):
-    src_records = entidad.cargaDatos(src_context, _fl_paciente)
-    ref_records = entidad.cargaDatos(ref_context, _fl_paciente)
+class Comparison(object):
+    def __init__(self, record_source, entity):
+        self.record_source = record_source
+        self.entity = entity
+        self.errores = []
+        self.src_records, self.ref_records = [], []
 
-    if len(src_records) != len(ref_records):
-        print 'Diferencias en %s:' % entidad.type_name
-        print _comp_error('Número de registros no coincide', len(src_records), len(ref_records))
-        return
+    @property
+    def is_successful(self):
+        return len(self.errores) == 0
 
-    with_diffs = [
-        1 for (source, reference) in zip(src_records, ref_records)
-            if _comp_record(source, reference, entidad) == False]
+    @property
+    def result(self):
+        return 'OK' if self.is_successful else _error_list(self.errores)
 
-    return not with_diffs
+    def _load_records(self):
+        self.src_records, self.ref_records = self.record_source.registros(self.entity)
 
+    def _record_count_error(self):
+        self.errores.append(_comp_error('\n\tNúmero de registros no coincide', len(self.src_records), len(self.ref_records)))
 
-def comp(_fl_paciente, schema, src_context, ref_context):
-    with_diffs = [
-        entidad for entidad in INFO_ENTIDADES[schema]
-            if _comp_all_records(_fl_paciente, src_context, ref_context, entidad) != True]
-    return not with_diffs
+    def _can_compare(self):
+        return self.record_source.son_comparables(self.src_records, self.ref_records)
 
+    def _comp_record(self, source, reference):
+        pairs = _mk_property_pairs(source, reference, self.entity)
+        return [_comp_error(p, a, b) for (a, b, p) in pairs if a != b]
+
+    def _compare_all_records(self):
+        all_errors = \
+            [self._comp_record(source, reference)
+                for (source, reference) in izip(self.src_records, self.ref_records)]
+        self.errores.extend(
+            self._print_errors(source, errors) for errors in all_errors if errors)
+
+    def __call__(self):
+        self._load_records()
+        if not self._can_compare():
+            self._record_count_error()
+        else:
+            self._compare_all_records()
+        return self
+
+    def __str__(self):
+        return "%s:\t%s" % (self.entity.type_name, self.result)
+
+    def _print_errors(self, source, errors):
+        errors.sort()
+        return '\n\tcon %s:\n\t%s' % (self.entity.key(source), _error_list(errors, '\n\t'))
+#end class Comparison
+
+def comp(schema, rsrc, verbose=False):
+    result = True
+    comparisons = (Comparison(rsrc, entidad) for entidad in INFO_ENTIDADES[schema])
+    for comparison in comparisons:
+        if not comparison().is_successful or verbose:
+            print comparison
+            result = False
+    return result
