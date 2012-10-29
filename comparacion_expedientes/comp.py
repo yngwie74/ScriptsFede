@@ -51,15 +51,16 @@ class Comparison(object):
         return self.record_source.son_comparables(self.src_records, self.ref_records)
 
     def _comp_record(self, source, reference):
+        key = self.entity.key(source)
         pairs = _mk_property_pairs(source, reference, self.entity)
-        return [_comp_error(p, a, b) for (a, b, p) in pairs if a != b]
+        return (key, [_comp_error(p, a, b) for (a, b, p) in pairs if a != b])
 
     def _compare_all_records(self):
         all_errors = \
             [self._comp_record(source, reference)
                 for (source, reference) in izip(self.src_records, self.ref_records)]
         self.errores.extend(
-            self._print_errors(source, errors) for errors in all_errors if errors)
+            self._print_errors(key, errors) for key, errors in all_errors if errors)
 
     def __call__(self):
         self._load_records()
@@ -72,10 +73,11 @@ class Comparison(object):
     def __str__(self):
         return "%s:\t%s" % (self.entity.type_name, self.result)
 
-    def _print_errors(self, source, errors):
+    def _print_errors(self, key, errors):
         errors.sort()
-        return '\n\tcon %s:\n\t%s' % (self.entity.key(source), _error_list(errors, '\n\t'))
+        return '\n\tcon %s:\n\t%s' % (key, _error_list(errors, '\n\t'))
 #end class Comparison
+
 
 def comp(schema, rsrc, verbose=False):
     result = True

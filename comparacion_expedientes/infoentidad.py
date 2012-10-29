@@ -53,7 +53,7 @@ def _mk_multikey(key_names):
     keys = map(_mk_key, key_names)
     return lambda data: '(%s)' % ', '.join(k(data) for k in keys)
 
-_ignore_by_default = ['FG_REPLICADO']
+_ignore_by_default = ['FG_REPLICADO', 'FE_ULTMOD']
 
 class EntidadInfo(object):
 
@@ -84,7 +84,7 @@ class EntidadInfo(object):
 
 INFO_ENTIDADES = {
     'OKW' : (
-        EntidadInfo(OKW.C_PACIENTE, OkwQueries.C_PACIENTE, keys=['FL_PACIENTE'], ignored_cols=['FE_SYNC_EXPEDIENTE', 'DS_UNIDADES_EXPEDIENTE']),
+        EntidadInfo(OKW.C_PACIENTE, OkwQueries.C_PACIENTE, keys=['FL_PACIENTE'], ignored_cols=['FE_SYNC_EXPEDIENTE', 'FE_RECEP_EXPEDIENTE']),
         EntidadInfo(OKW.K_EXPEDIENTE, OkwQueries.K_EXPEDIENTE, keys=['FL_EXPEDIENTE']),
         EntidadInfo(OKW.K_PACIENTE_IDENTIFICADOR, OkwQueries.K_PACIENTE_IDENTIFICADOR, keys=['FL_IDENTIFICADOR']),
 
