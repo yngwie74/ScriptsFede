@@ -18,6 +18,19 @@ def _get_folios_paciente():
 def _verbose():
     return bool([1 for arg in sys.argv if arg == '-v'])
 
+def _compara_okw(fl_paciente):
+    with data.okw_data_ctx('Source') as src_context:
+        with data.okw_data_ctx('Target') as ref_context:
+            rsrc = data.RecordSource(src_context, ref_context, fl_paciente)
+            return comp('OKW', rsrc, _verbose())
+
+def _compara_somatom(fl_paciente):
+    with data.smt_data_ctx('Source') as src_context:
+        with data.smt_data_ctx('Target') as ref_context:
+            rsrc = data.RecordSource(src_context, ref_context, _fl_paciente)
+            return comp('SOMATOM', rsrc, _verbose())
+
+
 pacientes = _get_folios_paciente()
 if not pacientes:
     print 'No se proporcionó ningún folio de paciente. Por favor, digite los folios a comparar: ',
@@ -26,18 +39,9 @@ if not pacientes:
 for _fl_paciente in pacientes:
     print 'Paciente %d...' % _fl_paciente
 
-    are_equal = True
+    okw_ok = _compara_okw(_fl_paciente)
+    som_ok = _compara_somatom(_fl_paciente)
 
-    with data.okw_data_ctx('Source') as src_context:
-        with data.okw_data_ctx('Target') as ref_context:
-            rsrc = data.RecordSource(src_context, ref_context, _fl_paciente)
-            are_equal = are_equal and comp('OKW', rsrc, _verbose())
-
-    with data.smt_data_ctx('Source') as src_context:
-        with data.smt_data_ctx('Target') as ref_context:
-            rsrc = data.RecordSource(src_context, ref_context, _fl_paciente)
-            are_equal = are_equal and comp('SOMATOM', rsrc, _verbose())
-
-    if are_equal:
+    if okw_ok and som_ok:
         print 'Los expedientes son iguales'
 # done!
