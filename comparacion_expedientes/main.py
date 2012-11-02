@@ -10,10 +10,10 @@ import data
 data.is_script = (__name__ == '__main__')
 
 def _to_folios(args):
-    return [int(arg) for arg in args if arg.isdigit()]
+    return (int(arg) for arg in args if arg.isdigit())
 
 def _get_folios_paciente():
-    return _to_folios(sys.argv)
+    return list(_to_folios(sys.argv))
 
 def _verbose():
     return bool([1 for arg in sys.argv if arg == '-v'])
@@ -30,11 +30,20 @@ def _compara_somatom(fl_paciente):
             rsrc = data.RecordSource(src_context, ref_context, _fl_paciente)
             return comp('SOMATOM', rsrc, _verbose())
 
+def _pide_folios():
+    is_first = True
+    while 1:
+        prompt = 'Digite el folio del%s expediente a comparar: ' % ('' if is_first else ' siguiente')
+        try:
+            yield raw_input(prompt).strip()
+        except EOFError:
+            break
+        is_first = False
+
 
 pacientes = _get_folios_paciente()
 if not pacientes:
-    print 'No se proporcionó ningún folio de paciente. Por favor, digite los folios a comparar: ',
-    pacientes = _to_folios(raw_input().split())
+    pacientes = _to_folios(_pide_folios())
 
 _first = True
 for _fl_paciente in pacientes:
