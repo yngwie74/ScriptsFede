@@ -1,4 +1,4 @@
-#!bin/env ipy
+#!/bin/env ipy
 # -*- coding: utf-8 -*-
 
 from infoentidad import INFO_ENTIDADES
