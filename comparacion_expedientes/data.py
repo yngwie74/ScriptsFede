@@ -1,4 +1,4 @@
-#!/env/ipy
+#!bin/env ipy
 # -*- coding: utf-8 -*-
 
 import clr
@@ -33,7 +33,7 @@ _DEFAULT_CONNECTION_STRINGS = {
 _DEFAULT_COMMAND_TIMEOUT = 300
 
 def _get_connection_string(name):
-    arg_pfx = '/%s:' % name.lower()
+    arg_pfx = '-%s:' % name.lower()
     found = [a for a in sys.argv if a.lower().startswith(arg_pfx)]
     if found:
         host_name = found[0][len(arg_pfx):]

@@ -1,4 +1,4 @@
-#!/env/ipy
+#!bin/env ipy
 # -*- coding: utf-8 -*-
 
 from infoentidad import INFO_ENTIDADES
@@ -12,8 +12,6 @@ def _comp_error(prop_name, a, b):
 
 def _should_compare(p, a, b):
     return not p.startswith('_')
-             #or (hasattr(a, p) and callable(getattr(a, p)))
-             #or (hasattr(b, p)) and callable(getattr(b, p))))
 
 def _mk_property_pairs(source, reference, entity):
     return ((getattr(source, p), getattr(reference, p), p)

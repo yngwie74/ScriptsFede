@@ -1,4 +1,4 @@
-﻿#!/env/ipy
+﻿#!bin/env ipy
 # -*- coding: utf-8 -*-
 
 import clr

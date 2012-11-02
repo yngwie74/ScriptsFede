@@ -1,4 +1,4 @@
-﻿#!/env/ipy
+﻿#!bin/env ipy
 # -*- coding: utf-8 -*-
 
 import clr
@@ -36,7 +36,11 @@ if not pacientes:
     print 'No se proporcionó ningún folio de paciente. Por favor, digite los folios a comparar: ',
     pacientes = _to_folios(raw_input().split())
 
+_first = True
 for _fl_paciente in pacientes:
+    if not _first:
+        print '-' * 80
+
     print 'Paciente %d...' % _fl_paciente
 
     okw_ok = _compara_okw(_fl_paciente)
@@ -44,4 +48,6 @@ for _fl_paciente in pacientes:
 
     if okw_ok and som_ok:
         print 'Los expedientes son iguales'
+
+    _first = False
 # done!
