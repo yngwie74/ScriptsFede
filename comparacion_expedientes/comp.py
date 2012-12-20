@@ -4,6 +4,16 @@
 from infoentidad import INFO_ENTIDADES
 from itertools import izip
 
+
+class PacienteNoEncontrado(Exception):
+    def __init__(self, folio, origen):
+        message = 'El paciente %d no existe en el servidor %s' % (folio, origen)
+        Exception.__init__(self, message)
+        self.folio = folio
+        self.origen = origen
+# end class
+
+
 def _ifnone(a):
     return a if not a is None else '<NULL>'
 
@@ -24,6 +34,7 @@ def _mk_property_pairs(source, reference, entity):
 def _error_list(errors, sep='\n'):
     return sep.join(errors)
 
+
 class Comparison(object):
     def __init__(self, record_source, entity):
         self.record_source = record_source
@@ -37,7 +48,15 @@ class Comparison(object):
 
     @property
     def result(self):
-        return 'OK' if self.is_successful else _error_list(self.errores)
+        return self._ok_result() \
+            if self.is_successful \
+            else _error_list(self.errores)
+
+    def _ok_result(self):
+        cuantos = len(self.src_records)
+        if cuantos == 0:
+            return 'OK\tsin registros en ambos servidores'
+        return 'OK\t%d registro%s igual%s' % (cuantos, cuantos != 1 and 's' or '', cuantos != 1 and 'es' or '')
 
     def _load_records(self):
         self.src_records, self.ref_records = self.record_source.registros(self.entity)
@@ -60,6 +79,10 @@ class Comparison(object):
         self.errores.extend(
             self._print_errors(key, errors) for key, errors in all_errors if errors)
 
+    @property
+    def didnt_find_data(self):
+        return len(self.src_records) == len(self.ref_records) == 0
+
     def __call__(self):
         self._load_records()
         if not self._can_compare():
@@ -78,10 +101,13 @@ class Comparison(object):
 
 
 def comp(schema, rsrc, verbose=False):
-    result = True
+    result = is_first = True
     comparisons = (Comparison(rsrc, entidad) for entidad in INFO_ENTIDADES[schema])
     for comparison in comparisons:
         if not comparison().is_successful or verbose:
             print comparison
             result = False
+        elif comparison.didnt_find_data and is_first:
+            raise PacienteNoEncontrado(rsrc.folio_paciente, rsrc.source_name)
+        is_first = False
     return result

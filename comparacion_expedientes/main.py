@@ -4,7 +4,7 @@
 import clr
 import sys
 
-from comp import comp
+from comp import comp, PacienteNoEncontrado
 import data
 
 data.is_script = (__name__ == '__main__')
@@ -52,8 +52,13 @@ for _fl_paciente in pacientes:
 
     print 'Paciente %d...' % _fl_paciente
 
-    okw_ok = _compara_okw(_fl_paciente)
-    som_ok = _compara_somatom(_fl_paciente)
+    okw_ok = som_ok = False
+
+    try:
+        okw_ok = _compara_okw(_fl_paciente)
+        som_ok = _compara_somatom(_fl_paciente)
+    except PacienteNoEncontrado, e:
+        print e
 
     if okw_ok and som_ok:
         print 'Los expedientes son iguales'

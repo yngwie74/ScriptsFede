@@ -55,6 +55,7 @@ def smt_data_ctx(which):
     conn_str = _get_connection_string(which)
     return _mkdatactx(DAOSomatomDataContext, conn_str)
 
+
 class RecordSource(object):
     def __init__(self, src_context, ref_context, folio_paciente):
         self.src_context = src_context
@@ -69,3 +70,7 @@ class RecordSource(object):
     def son_comparables(self, src_records, ref_records):
         return len(src_records) == len(ref_records)
 
+    @property
+    def source_name(self):
+        return self.src_context.Connection.DataSource
+# end class
