@@ -9,11 +9,12 @@ class LogManager(object):
 
     def __init__(self):
         self.loggers = {
-            ErrorPacienteNoEncontrado:     Log('pacientes_no_encontrados'),
-            ErrorNombrePacienteNoCoincide: Log('pacientes_nombres_diferentes'),
-            ErrorIdentificadoresFaltantes: Log('identificadores_sobrantes_fed'),
-            ErrorIdentificadorNoEncontrado:Log('identificadores_no_encontrados'),
-            ErrorIdentificadorNoCoincide:  Log('identificadores_diferentes'),
+            ErrorIdentificadorNoCoincide:   Log('identificadores_diferentes'),
+            ErrorIdentificadorNoEncontrado: Log('identificadores_no_encontrados'),
+            ErrorIdentificadoresSobrantes:  Log('identificadores_sobrantes_fed'),
+            ErrorIdentificadoresFaltantes:  Log('identificadores_falantes_fed'),
+            ErrorNombrePacienteNoCoincide:  Log('pacientes_nombres_diferentes'),
+            ErrorPacienteNoEncontrado:      Log('pacientes_no_encontrados'),
             }
         self.default = Log('errores')
 

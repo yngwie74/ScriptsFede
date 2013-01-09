@@ -8,7 +8,6 @@ from DAO.OKW import DAOokwDataContext
 from Entities import OKW
 
 from utils import limpia
-from erroresapp import ErrorIdentificadorNoEncontrado
 
 class OkwQueries:
 
@@ -35,16 +34,18 @@ class EntidadInfo(object):
 # end class EntidadInfo
 
 
+_DEFAULT_COMMAND_TIMEOUT = 300
+_DEFAULT_CONNECTION_TIMEOUT = 60
+
+
 def mkconnstr(host, db='OKW'):
     cstr = 'Data Source=%s;' \
            'Initial Catalog=%s;' \
            'Persist Security Info=True;' \
+           'Connect Timeout=%d;' \
            'User ID=<USUARIO>;' \
-           'Pwd=<PASSWORD>' % (host, db)
+           'Pwd=<PASSWORD>' % (host, db, _DEFAULT_CONNECTION_TIMEOUT)
     return cstr
-
-
-_DEFAULT_COMMAND_TIMEOUT = 300
 
 
 def _get_connection_string(fl_plaza):
@@ -99,6 +100,10 @@ def carga_paciente(contexto, fl_paciente):
         found.identificadores = _carga_identificadores(contexto, fl_paciente)
     return found
 
+def _diff_idents(paciente_origen, paciente_destino):
+    folios = paciente_origen.ids.difference(paciente_destino.ids)
+    return paciente_origen._ids_por_folios(folios) if len(folios) else []
+
 class Paciente(object):
 
     def __init__(self, paciente):
@@ -120,13 +125,19 @@ class Paciente(object):
     def ids(self):
         return frozenset(i.FL_IDENTIFICADOR for i in self.identificadores)
 
-    def tiene_menos_ids_que(self, otro_paciente):
-        return self.ids != otro_paciente.ids and self.ids.issubset(otro_paciente.ids)
+    def _ids_por_folios(self, folios):
+        idents = (self.busca_id(fl) for fl in folios)
+        return (id for id in idents if id)
+
+    def ids_comunes(self, otro_paciente):
+        folios = self.ids.intersection(otro_paciente.ids)
+        return self._ids_por_folios(folios)
+
+    def ids_que_le_faltan_a(self, otro_paciente):
+        return _diff_idents(self, otro_paciente)
 
     def ids_que_te_faltan_de(self, otro_paciente):
-        folios = otro_paciente.ids - self.ids
-        objetos = (otro_paciente.busca_id(fl) for fl in folios)
-        return '|'.join('FL_IDENTIFICADOR={0};DS_TEXTO={1}'.format(id.FL_IDENTIFICADOR, id.DS_TEXTO) for id in objetos if id)
+        return _diff_idents(otro_paciente, self)
 
 #end class Paciente
 

@@ -56,14 +56,24 @@ class ErrorIdentificadorNoCoincide(ErrorEsperado):
 #end class
 
 
-class ErrorIdentificadoresFaltantes(ErrorEsperado):
+class _ErrorDeltaIdentificadores(ErrorEsperado):
 
     LOG_FORMAT = 'FL_PACIENTE=%d|%s'
 
-    def __init__(self, local, federado):
-        fl_paciente = local.FL_PACIENTE
-        faltantes = local.ids_que_te_faltan_de(federado)
-        ErrorEsperado.__init__(self, fl_paciente, faltantes)
+    def __init__(self, fl_paciente, ids_diff):
+        str_diff = self._formatea_diff(ids_diff)
+        ErrorEsperado.__init__(self, fl_paciente, str_diff)
+
+    def _formatea_diff(self, idents):
+        return '|'.join('FL_IDENTIFICADOR={0};DS_TEXTO={1}'.format(id.FL_IDENTIFICADOR, id.DS_TEXTO) for id in idents)
 
 #end class
+
+
+class ErrorIdentificadoresSobrantes(_ErrorDeltaIdentificadores):
+    pass
+
+
+class ErrorIdentificadoresFaltantes(_ErrorDeltaIdentificadores):
+    pass
 

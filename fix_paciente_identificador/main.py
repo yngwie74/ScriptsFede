@@ -68,7 +68,6 @@ class CorrectorPacId(object):
     @log_n_continue
     def _valida_identificador(self, identificador):
         fede = self.fede.busca_id(identificador.FL_IDENTIFICADOR)
-
         if not fede:
             raise ErrorIdentificadorNoEncontrado(self.folio, identificador.FL_IDENTIFICADOR)
         elif identificador.DS_TEXTO != fede.DS_TEXTO:
@@ -78,12 +77,27 @@ class CorrectorPacId(object):
             return False
         return True
 
-    def _valida_identificadores(self):
-        for identificador in self.local.identificadores:
+    @log_n_continue
+    def _valida_identificadores_comunes(self):
+        for identificador in self.local.ids_comunes(self.fede):
             sys.stdout.write(self._valida_identificador(identificador) and '.' or 'x')
 
-        if self.local.tiene_menos_ids_que(self.fede):
-            raise ErrorIdentificadoresFaltantes(self.local, self.fede)
+    @log_n_continue
+    def _valida_identificadores_faltantes(self):
+        faltantes = self.local.ids_que_te_faltan_de(self.fede)
+        if faltantes:
+            raise ErrorIdentificadoresSobrantes(self.folio, faltantes)
+
+    @log_n_continue
+    def _valida_identificadores_sobrantes(self):
+        sobrantes = self.local.ids_que_le_faltan_a(self.fede)
+        if sobrantes:
+            raise ErrorIdentificadoresFaltantes(self.folio, sobrantes)
+
+    def _valida_identificadores(self):
+        self._valida_identificadores_comunes()
+        self._valida_identificadores_faltantes()
+        self._valida_identificadores_sobrantes()
 
     @log_n_continue
     def procesa(self):
@@ -91,6 +105,8 @@ class CorrectorPacId(object):
         self._carga_paciente_desde_federado()
         self._valida_nombres()
         self._valida_identificadores()
+
+#end class CorrectorPacId
 
 
 def folios(src_context, plaza_local):
