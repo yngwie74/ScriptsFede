@@ -69,7 +69,9 @@ class CorrectorPacId(object):
     def _valida_identificador(self, identificador):
         fede = self.fede.busca_id(identificador.FL_IDENTIFICADOR)
 
-        if identificador.DS_TEXTO != fede.DS_TEXTO:
+        if not fede:
+            raise ErrorIdentificadorNoEncontrado(self.folio, identificador.FL_IDENTIFICADOR)
+        elif identificador.DS_TEXTO != fede.DS_TEXTO:
             raise ErrorIdentificadorNoCoincide(identificador, fede)
         elif identificador.FL_PACIENTE_IDENTICADOR != fede.FL_PACIENTE_IDENTICADOR:
             self.generador.addChange(identificador.FL_PACIENTE_IDENTICADOR, fede)

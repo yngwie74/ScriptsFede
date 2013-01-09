@@ -11,7 +11,8 @@ class LogManager(object):
         self.loggers = {
             ErrorPacienteNoEncontrado:     Log('pacientes_no_encontrados'),
             ErrorNombrePacienteNoCoincide: Log('pacientes_nombres_diferentes'),
-            ErrorIdentificadoresFaltantes: Log('identificadores_faltantes'),
+            ErrorIdentificadoresFaltantes: Log('identificadores_sobrantes_fed'),
+            ErrorIdentificadorNoEncontrado:Log('identificadores_no_encontrados'),
             ErrorIdentificadorNoCoincide:  Log('identificadores_diferentes'),
             }
         self.default = Log('errores')
@@ -44,7 +45,7 @@ class Log(object):
         self.lineas = 0
 
     def open(self):
-        self.file = open(self.nombre, 'w', 0)
+        self.file = open(self.nombre, 'w', 1)
         return self
 
     def close(self):
@@ -62,5 +63,6 @@ class Log(object):
 
     def error(self, exception):
         self.file.write('%s: %s\n' % (self.timestamp, exception))
+        self.file.flush()
         self.lineas += 1
 

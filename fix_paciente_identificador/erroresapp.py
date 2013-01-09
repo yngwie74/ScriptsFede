@@ -58,12 +58,12 @@ class ErrorIdentificadorNoCoincide(ErrorEsperado):
 
 class ErrorIdentificadoresFaltantes(ErrorEsperado):
 
-    LOG_FORMAT = 'Los identificadores %(ids)s del paciente %(folio)d faltan localmente'
+    LOG_FORMAT = 'FL_PACIENTE=%d|%s'
 
     def __init__(self, local, federado):
         fl_paciente = local.FL_PACIENTE
         faltantes = local.ids_que_te_faltan_de(federado)
-        ErrorEsperado.__init__(self, folio=fl_paciente, ids=faltantes)
+        ErrorEsperado.__init__(self, fl_paciente, faltantes)
 
 #end class
 

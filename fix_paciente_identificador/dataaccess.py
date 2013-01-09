@@ -109,11 +109,8 @@ class Paciente(object):
         return getattr(self.paciente, name)
 
     def busca_id(self, fl_identificador):
-        found = primero(id for id in self.identificadores
-                        if id.FL_IDENTIFICADOR == fl_identificador)
-        if not found:
-            raise ErrorIdentificadorNoEncontrado(self.FL_PACIENTE, fl_identificador)
-        return found
+        return primero(id for id in self.identificadores
+                       if id.FL_IDENTIFICADOR == fl_identificador)
 
     @property
     def nombre_comp(self):
@@ -127,7 +124,9 @@ class Paciente(object):
         return self.ids != otro_paciente.ids and self.ids.issubset(otro_paciente.ids)
 
     def ids_que_te_faltan_de(self, otro_paciente):
-        return ', '.join(str(i) for i in otro_paciente.ids - self.ids)
+        folios = otro_paciente.ids - self.ids
+        objetos = (otro_paciente.busca_id(fl) for fl in folios)
+        return '|'.join('FL_IDENTIFICADOR={0};DS_TEXTO={1}'.format(id.FL_IDENTIFICADOR, id.DS_TEXTO) for id in objetos if id)
 
 #end class Paciente
 
