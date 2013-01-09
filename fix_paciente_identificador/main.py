@@ -27,9 +27,7 @@ def log_n_continue(f):
             log4py.error(e)
         except Exception, e:
             log4py.error(e)
-            # Preservar el stack trace
-            et, ei, tb = sys.exc_info()
-            raise e.__class__, e, tb
+            raise
     return wrap
 
 def with_logging(f):
@@ -38,9 +36,7 @@ def with_logging(f):
             return f(*args, **kwds)
         except Exception, e:
             log4py.error(e)
-            # Preservar el stack trace
-            et, ei, tb = sys.exc_info()
-            raise e.__class__, e, tb
+            raise
     return wrap
 
 class CorrectorPacId(object):
