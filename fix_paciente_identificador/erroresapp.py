@@ -48,7 +48,7 @@ class ErrorIdentificadorNoCoincide(ErrorEsperado):
 
     def __init__(self, local, federado):
         ErrorEsperado.__init__(self,
-            fl_paciente=fl_paciente,
+            fl_paciente=local.FL_PACIENTE,
             fl_identificador=local.FL_IDENTIFICADOR,
             ds_texto_local=local.DS_TEXTO,
             ds_texto_federado=federado.DS_TEXTO)
