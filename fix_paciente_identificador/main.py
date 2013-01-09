@@ -23,8 +23,13 @@ def log_n_continue(f):
     def wrap(*args, **kwds):
         try:
             return f(*args, **kwds)
+        except ErrorEsperado, e:
+            log4py.error(e)
         except Exception, e:
             log4py.error(e)
+            # Preservar el stack trace
+            et, ei, tb = sys.exc_info()
+            raise e.__class__, e, tb
     return wrap
 
 def with_logging(f):
@@ -33,16 +38,18 @@ def with_logging(f):
             return f(*args, **kwds)
         except Exception, e:
             log4py.error(e)
-            raise
+            # Preservar el stack trace
+            et, ei, tb = sys.exc_info()
+            raise e.__class__, e, tb
     return wrap
 
 class CorrectorPacId(object):
 
-    def __init__(self, ctx_local, ctx_fede, fl_paciente, gen):
+    def __init__(self, ctx_local, ctx_fede, fl_paciente, generador):
         self.ctx_local = ctx_local
         self.ctx_fede = ctx_fede
         self.folio = fl_paciente
-        self.generador = gen
+        self.generador = generador
 
     def _carga_paciente(self, desde_federado):
         contexto = (self.ctx_fede if desde_federado else self.ctx_local)
@@ -67,7 +74,7 @@ class CorrectorPacId(object):
         fede = self.fede.busca_id(identificador.FL_IDENTIFICADOR)
 
         if identificador.DS_TEXTO != fede.DS_TEXTO:
-            raise ErrorIdentificadorNoCoincide(self.folio, identificador.DS_TEXTO, fede.DS_TEXTO)
+            raise ErrorIdentificadorNoCoincide(identificador, fede)
         elif identificador.FL_PACIENTE_IDENTICADOR != fede.FL_PACIENTE_IDENTICADOR:
             self.generador.addChange(identificador.FL_PACIENTE_IDENTICADOR, fede)
             return False
@@ -78,7 +85,7 @@ class CorrectorPacId(object):
             sys.stdout.write(self._valida_identificador(identificador) and '.' or 'x')
 
         if self.local.tiene_menos_ids_que(self.fede):
-            raise IdentificadoresFaltantes(self.local, self.fede)
+            raise ErrorIdentificadoresFaltantes(self.local, self.fede)
 
     @log_n_continue
     def procesa(self):
@@ -91,17 +98,14 @@ class CorrectorPacId(object):
 def folios(src_context, plaza_local):
     found = [int(a) for a in sys.argv[1:] if a.isdigit()]
     if not found:
-        print 'cargando lista de pacientes de la plaza %s' % plaza_local
         found = dataaccess.obten_pacientes(src_context)
     return found
 
 
 @with_logging
 def main():
-    con_str = dataaccess.mkconnstr(_LOCAL, 'AdeM')
+    con_str = dataaccess.mkconnstr(_LOCAL) #, 'AdeM')
     with dataaccess.contexto_okw(con_str) as src_context:
-
-    # with dataaccess.contexto_okw_para_unidad(_LOCAL) as src_context:
 
         plaza_local = int(dataaccess.obten_plaza_local(src_context))
         nombre_script = 'fix_k_paciente_identificador_%02d' % plaza_local

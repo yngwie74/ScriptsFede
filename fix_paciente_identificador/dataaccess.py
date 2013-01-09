@@ -81,40 +81,6 @@ K_PACIENTE_IDENTIFICADOR = EntidadInfo(record_type=OKW.K_PACIENTE_IDENTIFICADOR,
                                         query=OkwQueries.K_PACIENTE_IDENTIFICADOR)
 
 
-class Paciente(object):
-
-    def __init__(self, c_paciente):
-        self.c_paciente = c_paciente
-        self.identificadores = []
-
-    def __getattr__(self, name):
-        return getattr(self.c_paciente, name)
-
-    def busca_id(self, fl_identificador):
-        found = primero(id for id in self.identificadores
-                        if id.FL_IDENTIFICADOR == fl_identificador)
-        if not found:
-            raise ErrorIdentificadorNoEncontrado(self.c_paciente.FL_PACIENTE, fl_identificador)
-        return found
-
-    @property
-    def nombre_comp(self):
-        p = self.c_paciente
-        return ' '.join(limpia(s) for s in [p.NB_PACIENTE, p.NB_PATERNO, p.NB_MATERNO])
-
-    @property
-    def ids(self):
-        return frozenset(i.FL_IDENTIFICADOR for i in self.identificadores)
-
-    def tiene_menos_ids_que(self, otro_paciente):
-        return self.ids != otro_paciente.ids and self.ids.issubset(otro_paciente.ids)
-
-    def ids_que_te_faltan_de(self, otro_paciente):
-        return ', '.join(str(i) for i in otro_paciente.ids - self.ids)
-
-#end class Paciente
-
-
 def primero(*args, **kwds):
     try:
         return next(*args, **kwds)
@@ -133,4 +99,35 @@ def carga_paciente(contexto, fl_paciente):
         found.identificadores = _carga_identificadores(contexto, fl_paciente)
     return found
 
+class Paciente(object):
+
+    def __init__(self, paciente):
+        self.paciente = paciente
+        self.identificadores = []
+
+    def __getattr__(self, name):
+        return getattr(self.paciente, name)
+
+    def busca_id(self, fl_identificador):
+        found = primero(id for id in self.identificadores
+                        if id.FL_IDENTIFICADOR == fl_identificador)
+        if not found:
+            raise ErrorIdentificadorNoEncontrado(self.FL_PACIENTE, fl_identificador)
+        return found
+
+    @property
+    def nombre_comp(self):
+        return ' '.join(limpia(s) for s in [self.NB_PACIENTE, self.NB_PATERNO, self.NB_MATERNO])
+
+    @property
+    def ids(self):
+        return frozenset(i.FL_IDENTIFICADOR for i in self.identificadores)
+
+    def tiene_menos_ids_que(self, otro_paciente):
+        return self.ids != otro_paciente.ids and self.ids.issubset(otro_paciente.ids)
+
+    def ids_que_te_faltan_de(self, otro_paciente):
+        return ', '.join(str(i) for i in otro_paciente.ids - self.ids)
+
+#end class Paciente
 

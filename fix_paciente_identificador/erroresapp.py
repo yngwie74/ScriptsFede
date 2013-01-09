@@ -44,10 +44,14 @@ class ErrorIdentificadorNoEncontrado(ErrorEsperado):
 
 class ErrorIdentificadorNoCoincide(ErrorEsperado):
 
-    LOG_FORMAT = 'FL_PACIENTE=%d|FL_IDENTIFICADOR=%d|%s|%s'
+    LOG_FORMAT = 'FL_PACIENTE=%(fl_paciente)d|FL_IDENTIFICADOR=%(fl_identificador)d|%(ds_texto_local)s|%(ds_texto_federado)s'
 
-    def __init__(self, fl_paciente, local, federado):
-        ErrorEsperado.__init__(self, fl_paciente, local.DS_TEXTO, federado.DS_TEXTO)
+    def __init__(self, local, federado):
+        ErrorEsperado.__init__(self,
+            fl_paciente=fl_paciente,
+            fl_identificador=local.FL_IDENTIFICADOR,
+            ds_texto_local=local.DS_TEXTO,
+            ds_texto_federado=federado.DS_TEXTO)
 
 #end class
 

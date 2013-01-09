@@ -11,7 +11,8 @@ class LogManager(object):
         self.loggers = {
             ErrorPacienteNoEncontrado:     Log('pacientes_no_encontrados'),
             ErrorNombrePacienteNoCoincide: Log('pacientes_nombres_diferentes'),
-            IdentificadoresFaltantes: Log('identificadores_faltantes'),
+            ErrorIdentificadoresFaltantes: Log('identificadores_faltantes'),
+            ErrorIdentificadorNoCoincide:  Log('identificadores_diferentes'),
             }
         self.default = Log('errores')
 
