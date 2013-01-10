@@ -1,6 +1,10 @@
 #!/bin/env ipy
 # -*- coding: utf-8 -*-
 
+from System import Console
+from System.IO import Path
+from System.Reflection import Assembly
+
 import sys
 
 is_script = __name__ == '__main__'
@@ -12,14 +16,16 @@ import scriptgen
 import logmanager
 
 from erroresapp import *
-from utils import sin_acentos
+from utils import es_diacritico, sin_acentos, primero
 
 _LOCAL = 'localhost'
 _FEDERADO = '<Instancia Federado>'
 
 log4py = None
 
+
 def log_n_continue(f):
+
     def wrap(*args, **kwds):
         try:
             return f(*args, **kwds)
@@ -28,16 +34,21 @@ def log_n_continue(f):
         except Exception, e:
             log4py.error(e)
             raise
+
     return wrap
 
+
 def with_logging(f):
+
     def wrap(*args, **kwds):
         try:
             return f(*args, **kwds)
         except Exception, e:
             log4py.error(e)
             raise
+
     return wrap
+
 
 class CorrectorPacId(object):
 
@@ -109,32 +120,106 @@ class CorrectorPacId(object):
 #end class CorrectorPacId
 
 
-def folios(src_context, plaza_local):
-    found = [int(a) for a in sys.argv[1:] if a.isdigit()]
+def _find_arg(arg):
+    pred = (arg if callable(arg) else lambda a: a == arg)
+    return primero(a for a in sys.argv if pred(a))
+
+
+def _mostrar_ayuda():
+    main_module = Assembly.GetEntryAssembly().Location
+    exe_name = Path.GetFileNameWithoutExtension(main_module)
+
+    print sin_acentos('''%s [-sl:<servidor_local>] [-dl:<base_datos_local>]
+\t[-sr:<servidor_remoto>] [-dr:<base_datos_remoto>]
+\t[-|<folio>[ folio[ folio[ ...]]] [-?]
+
+Donde:
+-sl y -sr:
+\tson los servidores de SQL Server a usar, incluyendo el nombre de
+\tinstancia de ser necesario (p.e. "localhost\\SqlProd"). Por default se
+\tusa "localhost" como local y federado como remoto.
+
+-dl y -dr:
+\tson los nombres de las bases de datos a usar. Por default se usará OKW
+\ten ambos casos.
+
+folio [...] | -
+\tson los folios de los pacientes a procesar.
+\tSi en su lugar se especifica el parámetro "-", se tomarán los folios
+\tdesde la consola. Por default se leen todos los pacientes de la tabla
+\tOKW.C_PACIENTE del servidor local.
+
+-?:
+\tMuestra esta pantalla.''' \
+        % (sys.argv[0] if is_script else exe_name), es_diacritico)
+
+
+def _parse_arg(argname, default):
+    arg_pfx = '-%s:' % argname.lower()
+    found = _find_arg(lambda a: a.lower().startswith(arg_pfx))
+    if found:
+        return found[len(arg_pfx):].strip('"')
+    return default
+
+
+def _pide_folios():
+    is_first = True
+    while 1:
+        prompt = 'Digite el folio del%s expediente a comparar: ' % ((''
+                 if is_first else ' siguiente'))
+        print prompt,
+        try:
+            yield Console.ReadLine().strip()
+        except:
+            break
+        is_first = False
+
+
+def _parse_ints(seq):
+    return (int(item) for item in seq if item.isdigit())
+
+
+def folios(src_context):
+    if _find_arg('-'):
+        return _parse_ints(_pide_folios())
+
+    found = list(_parse_ints(sys.argv))
     if not found:
         found = dataaccess.obten_pacientes(src_context)
     return found
 
 
+def _get_connstr(sarg, darg, sdefault, ddefault='OKW'):
+    return dataaccess.mkconnstr(
+        host=_parse_arg(sarg, sdefault),
+        db=_parse_arg(darg, ddefault),
+        )
+
 @with_logging
 def main():
-    con_str = dataaccess.mkconnstr(_LOCAL) #, 'AdeM')
+    con_str = _get_connstr('sl', 'dl', _LOCAL)
+
     with dataaccess.contexto_okw(con_str) as src_context:
 
         plaza_local = int(dataaccess.obten_plaza_local(src_context))
         nombre_script = 'fix_k_paciente_identificador_%02d' % plaza_local
         gen = scriptgen.ScriptGen(nombre_script, slice_size=100)
 
-        todos_los_pacientes = folios(src_context, plaza_local)
-
-        with dataaccess.contexto_okw(dataaccess.mkconnstr(_FEDERADO)) as ref_context:
-            for fl_paciente in todos_los_pacientes:
+        con_str = _get_connstr('sr', 'dr', _FEDERADO)
+        with dataaccess.contexto_okw(con_str) as ref_context:
+            for fl_paciente in folios(src_context):
                 CorrectorPacId(src_context, ref_context, fl_paciente, gen).procesa()
 
         gen.done()
     print 'ok'
 
+#~ Main script
+
+if _find_arg('-?'):
+    _mostrar_ayuda()
+    sys.exit(0)
+
 with logmanager.LogManager() as log4py:
     main()
 
-# done!
+#~ done!

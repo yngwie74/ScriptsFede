@@ -7,7 +7,8 @@ clr.AddReference('Entities')
 from DAO.OKW import DAOokwDataContext
 from Entities import OKW
 
-from utils import limpia
+from utils import limpia, primero
+
 
 class OkwQueries:
 
@@ -32,7 +33,6 @@ class EntidadInfo(object):
         return list(contexto.ExecuteQuery[self.record_type](self.query, folio_paciente))
 
 # end class EntidadInfo
-
 
 _DEFAULT_COMMAND_TIMEOUT = 300
 _DEFAULT_CONNECTION_TIMEOUT = 60
@@ -79,14 +79,7 @@ def obten_plaza_local(contexto):
 C_PACIENTE = EntidadInfo(record_type=OKW.C_PACIENTE, query=OkwQueries.C_PACIENTE)
 
 K_PACIENTE_IDENTIFICADOR = EntidadInfo(record_type=OKW.K_PACIENTE_IDENTIFICADOR,
-                                        query=OkwQueries.K_PACIENTE_IDENTIFICADOR)
-
-
-def primero(*args, **kwds):
-    try:
-        return next(*args, **kwds)
-    except StopIteration:
-        pass
+                                       query=OkwQueries.K_PACIENTE_IDENTIFICADOR)
 
 
 def _carga_identificadores(contexto, fl_paciente):
@@ -100,9 +93,11 @@ def carga_paciente(contexto, fl_paciente):
         found.identificadores = _carga_identificadores(contexto, fl_paciente)
     return found
 
+
 def _diff_idents(paciente_origen, paciente_destino):
     folios = paciente_origen.ids.difference(paciente_destino.ids)
-    return paciente_origen._ids_por_folios(folios) if len(folios) else []
+    return (paciente_origen._ids_por_folios(folios) if len(folios) else [])
+
 
 class Paciente(object):
 
