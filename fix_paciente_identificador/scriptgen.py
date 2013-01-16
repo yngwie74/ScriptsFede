@@ -124,8 +124,13 @@ class ScriptGen(object):
     def _dropTempTable(self):
         self._writeln(_SCRIPT_DROP_TABLE)
 
+    def _useOkw(self):
+        self._writeln('USE OKW')
+        self._writeln('')
+
     def _generate_slice(self):
         with open(self.fname, 'w') as self.file:
+            self._useOkw()
             self._createTempTable()
             self._populateTempTable()
             self._beginTransaction()

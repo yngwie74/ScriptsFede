@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import sys
 from System.IO import File
 from System import DateTime
 
@@ -27,6 +28,7 @@ class LogManager(object):
 
     def error(self, exception):
         self._logger_for(exception).error(exception)
+        sys.stdout.write('!')
 
     def __enter__(self):
         for log in self._all_loggers:

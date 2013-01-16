@@ -28,8 +28,9 @@ def sin_acentos(s, filtro=es_marca_o_puntuacion):
 
 
 def primero(*args, **kwds):
+    iterable =  iter(*args, **kwds)
     try:
-        return next(*args, **kwds)
+        return next(iterable)
     except StopIteration:
         pass
 

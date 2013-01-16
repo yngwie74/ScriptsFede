@@ -30,7 +30,7 @@ class EntidadInfo(object):
         return self.record_type.__name__
 
     def cargaDatos(self, contexto, folio_paciente):
-        return list(contexto.ExecuteQuery[self.record_type](self.query, folio_paciente))
+        return contexto.ExecuteQuery[self.record_type](self.query, folio_paciente)
 
 # end class EntidadInfo
 
@@ -44,7 +44,8 @@ def mkconnstr(host, db='OKW'):
            'Persist Security Info=True;' \
            'Connect Timeout=%d;' \
            'User ID=<USUARIO>;' \
-           'Pwd=<PASSWORD>' % (host, db, _DEFAULT_CONNECTION_TIMEOUT)
+           'Pwd=<PASSWORD>' \
+           % (host, db, _DEFAULT_CONNECTION_TIMEOUT)
     return cstr
 
 
@@ -55,6 +56,7 @@ def _get_connection_string(fl_plaza):
 def _mkdatactx(class_, connstr):
     dc = class_(connstr)
     dc.CommandTimeout = _DEFAULT_COMMAND_TIMEOUT
+    dc.ObjectTrackingEnabled = False
     return dc
 
 
@@ -73,7 +75,7 @@ _OBTEN_PLAZA_LOCAL_SQL = 'SELECT NO_VALOR FROM OKW.C_CONFIGURACION WHERE CL_CONF
 
 
 def obten_plaza_local(contexto):
-    return list(contexto.ExecuteQuery[str](_OBTEN_PLAZA_LOCAL_SQL))[0]
+    return primero(contexto.ExecuteQuery[str](_OBTEN_PLAZA_LOCAL_SQL))
 
 
 C_PACIENTE = EntidadInfo(record_type=OKW.C_PACIENTE, query=OkwQueries.C_PACIENTE)
@@ -87,10 +89,10 @@ def _carga_identificadores(contexto, fl_paciente):
 
 
 def carga_paciente(contexto, fl_paciente):
-    found = primero(p for p in C_PACIENTE.cargaDatos(contexto, fl_paciente))
+    found = primero(C_PACIENTE.cargaDatos(contexto, fl_paciente))
     if found:
         found = Paciente(found)
-        found.identificadores = _carga_identificadores(contexto, fl_paciente)
+        found.identificadores = list(_carga_identificadores(contexto, fl_paciente))
     return found
 
 
