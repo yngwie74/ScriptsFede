@@ -31,9 +31,6 @@ def log_n_continue(f):
             return f(*args, **kwds)
         except ErrorEsperado, e:
             log4py.error(e)
-        except Exception, e:
-            log4py.error(e)
-            raise
 
     return wrap
 
@@ -84,7 +81,7 @@ class CorrectorPacId(object):
         elif identificador.DS_TEXTO != fede.DS_TEXTO:
             raise ErrorIdentificadorNoCoincide(identificador, fede)
         elif identificador.FL_PACIENTE_IDENTICADOR != fede.FL_PACIENTE_IDENTICADOR:
-            self.generador.addChange(identificador.FL_PACIENTE_IDENTICADOR, fede)
+            self.generador.addSynch(identificador.FL_PACIENTE_IDENTICADOR, fede)
             return False
         return True
 
@@ -93,11 +90,11 @@ class CorrectorPacId(object):
         for identificador in self.local.ids_comunes(self.fede):
             sys.stdout.write(self._valida_identificador(identificador) and '.' or 'x')
 
-    @log_n_continue
     def _valida_identificadores_faltantes(self):
         faltantes = self.local.ids_que_te_faltan_de(self.fede)
         if faltantes:
-            raise ErrorIdentificadoresSobrantes(self.folio, faltantes)
+            self.generador.addInserts(faltantes)
+            sys.stdout.write('+')
 
     @log_n_continue
     def _valida_identificadores_sobrantes(self):

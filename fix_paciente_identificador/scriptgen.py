@@ -12,16 +12,14 @@ CREATE TABLE #tmp_paciente_identificador
     ,CL_USUARIO NVARCHAR(25) NULL
     ,NB_PROGRAMA NVARCHAR(50) NULL
     ,FG_REPLICADO BIT NOT NULL DEFAULT (1)
-  )
-
--- Insertar registros que se van a cambiar'''
+  )'''
 
 _SCRIPT_INSERT_TMP = \
     "INSERT INTO #tmp_paciente_identificador (FL_PACIENTE_IDENTICADOR ,FL_PACIENTE ,FL_IDENTIFICADOR ,DS_TEXTO ,FE_CREACION ,FE_ULTMOD ,CL_USUARIO ,NB_PROGRAMA) VALUES (%(fl_paciente_identicador)d ,%(fl_paciente)d ,%(fl_identificador)d ,'%(ds_texto)s' ,'%(fe_creacion)s' ,'%(fe_ultmod)s' ,'%(cl_usuario)s' ,'%(nb_programa)s')"
 
 _SCRIPT_BEGIN_TRAN = '''BEGIN TRAN Homologar_Idents
 
--- Borrar registros que se van a cambiar'''
+-- Borrar registros que se van a actualizar'''
 
 _SCRIPT_DELETE_ANT = \
     'DELETE FROM okw.K_PACIENTE_IDENTIFICADOR WHERE FL_PACIENTE_IDENTICADOR = %(fl_paciente_identicador)d and FL_PACIENTE=%(fl_paciente)d and FL_IDENTIFICADOR=%(fl_identificador)d'
@@ -59,27 +57,42 @@ _SCRIPT_COMMIT_TRAN = 'COMMIT TRAN Homologar_Idents'
 _SCRIPT_DROP_TABLE = 'DROP TABLE #tmp_paciente_identificador'
 
 
+def auto_generate(f):
+
+    def _wrap(self, *args, **kwds):
+        ret = f(self, *args, **kwds)
+
+        if len(self) >= self.slice_size:
+            self._generate()
+        return ret
+
+    return _wrap
+
+
 class ScriptGen(object):
 
     def __init__(self, name, slice_size=500):
         self.fname_fmt = '%s_%%03d.sql' % name
         self.slice_size = slice_size
         self.cur_slice = 1
-        self.cambios = {}
+        self.to_synch = {}
+        self.to_insert = []
         self.file = None
 
     @property
     def fname(self):
         return self.fname_fmt % self.cur_slice
 
-    def addChange(self, folio_org, paciente):
-        self.cambios[folio_org] = paciente
+    @auto_generate
+    def addInserts(self, identificador):
+        self.to_insert.extend(identificador)
 
-        if len(self) >= self.slice_size:
-            self._generate()
+    @auto_generate
+    def addSynch(self, folio_org, identificador):
+        self.to_synch[folio_org] = identificador
 
     def __len__(self):
-        return len(self.cambios)
+        return len(self.to_synch) + len(self.to_insert)
 
     def _writeln(self, fmt, *args, **kwds):
         line = fmt % (kwds if kwds else tuple(args))
@@ -88,9 +101,13 @@ class ScriptGen(object):
     def _createTempTable(self):
         self._writeln(_SCRIPT_CREATE_TABLE)
 
-    def _populateTempTable(self):
+    def _insertIntoTempTable(self, idents, header):
         _FMT = 'yyyyMMdd HH:mm:ss.fff'
-        for p in self.cambios.itervalues():
+
+        if header:
+            self._writeln(header)
+
+        for p in idents:
             self._writeln(
                 _SCRIPT_INSERT_TMP,
                 fl_paciente_identicador=p.FL_PACIENTE_IDENTICADOR,
@@ -103,11 +120,17 @@ class ScriptGen(object):
                 nb_programa=p.NB_PROGRAMA,
                 )
 
+    def _populateTempTable(self):
+        self._insertIntoTempTable(self.to_synch.itervalues(),
+            '-- Insertar registros que se van a actualizar')
+        self._insertIntoTempTable(self.to_insert,
+            '-- Insertar registros de federado que faltan localmente')
+
     def _beginTransaction(self):
         self._writeln(_SCRIPT_BEGIN_TRAN)
 
     def _deleteOldRecords(self):
-        for (f, p) in self.cambios.iteritems():
+        for (f, p) in self.to_synch.iteritems():
             self._writeln(
                 _SCRIPT_DELETE_ANT,
                 fl_paciente_identicador=f,
@@ -139,9 +162,13 @@ class ScriptGen(object):
             self._commitTransaction()
             self._dropTempTable()
 
+    def _clear(self):
+        self.to_synch = {}
+        self.to_insert = []
+
     def _generate(self):
         self._generate_slice()
-        self.cambios.clear()
+        self._clear()
         self.cur_slice += 1
 
     def done(self):
