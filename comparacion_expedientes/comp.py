@@ -40,7 +40,6 @@ class Comparison(object):
         self.record_source = record_source
         self.entity = entity
         self.errores = []
-        self.src_records, self.ref_records = [], []
 
     @property
     def is_successful(self):
@@ -53,42 +52,51 @@ class Comparison(object):
             else _error_list(self.errores)
 
     def _ok_result(self):
-        cuantos = len(self.src_records)
+        cuantos = len(self.record_source.src_records)
         if cuantos == 0:
             return 'OK\tsin registros en ambos servidores'
-        return 'OK\t%d registro%s igual%s' % (cuantos, cuantos != 1 and 's' or '', cuantos != 1 and 'es' or '')
+        return 'OK\t%d registro(s) igual(es)' % cuantos
 
     def _load_records(self):
-        self.src_records, self.ref_records = self.record_source.registros(self.entity)
+        self.record_source.carga_registros(self.entity)
 
-    def _record_count_error(self):
-        self.errores.append(_comp_error('\n\tNúmero de registros no coincide', len(self.src_records), len(self.ref_records)))
-
-    def _can_compare(self):
-        return self.record_source.son_comparables(self.src_records, self.ref_records)
-
-    def _comp_record(self, source, reference):
-        key = self.entity.key(source)
+    def _compare_single_record(self, source, reference):
+        key = self.entity.llave_str(source)
         pairs = _mk_property_pairs(source, reference, self.entity)
         return (key, [_comp_error(p, a, b) for (a, b, p) in pairs if a != b])
 
-    def _compare_all_records(self):
+    def _compare_all_records(self, src_records, ref_records):
         all_errors = \
-            [self._comp_record(source, reference)
-                for (source, reference) in izip(self.src_records, self.ref_records)]
+            [self._compare_single_record(source, reference)
+                for (source, reference) in izip(src_records, ref_records)]
+
         self.errores.extend(
             self._print_errors(key, errors) for key, errors in all_errors if errors)
 
+        return bool(all_errors)
+
+    def _compare_records(self):
+        msg_comunes = None
+
+        src_records, ref_records = self.record_source.registros_comunes(self.entity)
+        all_correct = self._compare_all_records(src_records, ref_records)
+
+        if all_correct and len(src_records) < len(self.record_source.src_records):
+            msg_comunes = '\n\t%d registro(s) igual(es)' % len(src_records)
+
+        solo_origen = self.record_source.solo_origen(self.entity)
+        solo_referencia = self.record_source.solo_referencia(self.entity)
+
+        mensajes = (msg_comunes, solo_origen, solo_referencia)
+        self.errores.extend(msg for msg in mensajes if msg)
+        
     @property
     def didnt_find_data(self):
-        return len(self.src_records) == len(self.ref_records) == 0
+        return not self.record_source.tiene_datos
 
     def __call__(self):
         self._load_records()
-        if not self._can_compare():
-            self._record_count_error()
-        else:
-            self._compare_all_records()
+        self._compare_records()
         return self
 
     def __str__(self):

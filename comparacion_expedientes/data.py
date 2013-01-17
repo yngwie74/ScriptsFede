@@ -11,17 +11,6 @@ from DAO.SOMATOM import DAOSomatomDataContext
 clr.AddReference('System.Configuration')
 from System.Configuration import ConfigurationManager
 
-_is_script = False
-
-def _get_is_script(value):
-    return _is_script
-
-def _set_is_script(value):
-    global _is_script
-    _is_script = value
-
-is_script = property(_get_is_script, _set_is_script)
-
 def _mkconnstr(host):
     return 'Data Source=%s;Initial Catalog=OKW;Persist Security Info=True;User ID=super;Pwd=super' % host
 
@@ -62,13 +51,53 @@ class RecordSource(object):
         self.ref_context = ref_context
         self.folio_paciente = folio_paciente
 
-    def registros(self, entidad):
-        src_records = entidad.cargaDatos(self.src_context, self.folio_paciente)
-        ref_records = entidad.cargaDatos(self.ref_context, self.folio_paciente)
+    def carga_registros(self, entidad):
+        self.src_records = entidad.cargaDatos(self.src_context, self.folio_paciente)
+        self.ref_records = entidad.cargaDatos(self.ref_context, self.folio_paciente)
+        return (self.src_records, self.ref_records)
+
+    def _get_keys(self, entity, regs):
+        return frozenset(entity.obten_llave(r) for r in regs)
+
+    def _find_rec_by_key(self, entity, regs, key):
+        try:
+            return next(r for r in regs if entity.obten_llave(r) == key)
+        except StopIteration:
+            pass
+
+    def _get_all_by_keys(self, entity, regs, keys):
+        return [self._find_rec_by_key(entity, regs, k) for k in keys]
+
+    def registros_comunes(self, entity):
+        src_keys = self._get_keys(entity, self.src_records)
+        ref_keys = self._get_keys(entity, self.ref_records)
+        comunes = src_keys.intersection(ref_keys)
+
+        src_records = self._get_all_by_keys(entity, self.src_records, comunes)
+        ref_records = self._get_all_by_keys(entity, self.ref_records, comunes)
+
         return (src_records, ref_records)
 
-    def son_comparables(self, src_records, ref_records):
-        return len(src_records) == len(ref_records)
+    def _get_diff(self, desc, entity, a, b):
+        a_keys = self._get_keys(entity, a)
+        b_keys = self._get_keys(entity, b)
+        diff = a_keys.difference(b_keys)
+        if len(diff) == 1:
+            lista_llaves = ''.join(str(k) for k in diff)
+            return '\n\t1 registro solo existe en la unidad de %s, con %s = %s' % (desc, entity.pk, lista_llaves)
+        elif len(diff) > 1:
+            lista_llaves = ', '.join(str(k) for k in diff)
+            return '\n\t%d registros solo existen en la unidad de %s, con %s in (%s)' % (len(diff), desc, entity.pk, lista_llaves)
+
+    def solo_origen(self, entity):
+        return self._get_diff('origen', entity, self.src_records, self.ref_records)
+
+    def solo_referencia(self, entity):
+        return self._get_diff('referencia', entity, self.ref_records, self.src_records)
+
+    @property
+    def tiene_datos(self):
+        return (len(self.src_records) + len(self.ref_records)) > 0
 
     @property
     def source_name(self):
