@@ -8,7 +8,6 @@ from Entities import OKW, SOMATOM
 
 class OkwQueries:
     C_PACIENTE = 'select * from OKW.C_PACIENTE where FL_PACIENTE = {0} order by FL_PACIENTE'
-    K_EXPEDIENTE = 'select * from OKW.K_EXPEDIENTE where FL_PACIENTE = {0} order by FL_EXPEDIENTE'
     K_PACIENTE_IDENTIFICADOR = 'select * from OKW.K_PACIENTE_IDENTIFICADOR where FL_PACIENTE = {0} order by FL_IDENTIFICADOR'
     K_ALERGIA_PACIENTE = 'select * from OKW.K_ALERGIA_PACIENTE where FL_PACIENTE = {0} order by FL_ALERGIA_PACIENTE'
     K_ANTECEDENTESGO = 'select * from OKW.K_ANTECEDENTESGO where FL_PACIENTE = {0} order by FL_ANTECEDENTESGO'
@@ -60,7 +59,8 @@ class EntidadInfo(object):
 
     def __init__(self, record_type, query, keys, ignored_cols=_ignore_by_default):
         (self.record_type, self.query) = (record_type, query)
-        self.key = (_mk_key(keys[0]) if len(keys) == 1 else _mk_multikey(keys))
+        self._key = (_mk_key(keys[0]) if len(keys) == 1 else _mk_multikey(keys))
+        self.pk = keys[0]
         self.ignored = set(ignored_cols) | set(_ignore_by_default)
 
     @property
@@ -70,8 +70,11 @@ class EntidadInfo(object):
     def cargaDatos(self, contexto, folio_paciente):
         return list(contexto.ExecuteQuery[self.record_type](self.query, folio_paciente))
 
-    def llave(self, registro):
-        return self.key(registro)
+    def obten_llave(self, data):
+        return getattr(data, self.pk)
+
+    def llave_str(self, registro):
+        return self._key(registro)
 
     def debe_comparar(self, prop_name):
         return prop_name.isupper() \
@@ -86,9 +89,8 @@ class EntidadInfo(object):
 INFO_ENTIDADES = {
     'OKW' : (
         EntidadInfo(OKW.C_PACIENTE, OkwQueries.C_PACIENTE, keys=['FL_PACIENTE'], ignored_cols=['FE_SYNC_EXPEDIENTE', 'FE_RECEP_EXPEDIENTE']),
-        EntidadInfo(OKW.K_EXPEDIENTE, OkwQueries.K_EXPEDIENTE, keys=['FL_EXPEDIENTE']),
         EntidadInfo(OKW.K_PACIENTE_IDENTIFICADOR, OkwQueries.K_PACIENTE_IDENTIFICADOR, keys=['FL_IDENTIFICADOR']),
-
+        
         EntidadInfo(OKW.K_ALERGIA_PACIENTE, OkwQueries.K_ALERGIA_PACIENTE, keys=['FL_ALERGIA_PACIENTE']),
         EntidadInfo(OKW.K_ANTECEDENTESGO, OkwQueries.K_ANTECEDENTESGO, keys=['FL_ANTECEDENTESGO']),
         EntidadInfo(OKW.K_ANTECEDENTESHF, OkwQueries.K_ANTECEDENTESHF, keys=['FL_ANTECEDENTEHF']),
@@ -96,28 +98,28 @@ INFO_ENTIDADES = {
         EntidadInfo(OKW.K_ANTECEDENTESPP, OkwQueries.K_ANTECEDENTESPP, keys=['FL_ANTECEDENTEPP']),
         EntidadInfo(OKW.K_ANTECEDENTES_ESTRABOLOGICO, OkwQueries.K_ANTECEDENTES_ESTRABOLOGICO, keys=['FL_ANTECEDENTES_ESTRABOLOGICOS']),
         EntidadInfo(OKW.K_ANTECEDENTES_PERINATALE, OkwQueries.K_ANTECEDENTES_PERINATALE, keys=['FL_ANTECEDENTES_PERINATALES']),
-
+        
         EntidadInfo(OKW.K_DIAGNOSTICO_PACIENTE, OkwQueries.K_DIAGNOSTICO_PACIENTE, keys=['FL_DIAGNOSTICO_PACIENTE']),
         EntidadInfo(OKW.K_BITACORA_DIAGNOSTICO, OkwQueries.K_BITACORA_DIAGNOSTICO, keys=['FL_BITACORA']),
-
+        
         EntidadInfo(OKW.K_DETALLE_EXPEDIENTE, OkwQueries.K_DETALLE_EXPEDIENTE, keys=['FL_DETALLE_EXPEDIENTE']),
         EntidadInfo(OKW.K_DETALLE_EXPEDIENTE_HIST, OkwQueries.K_DETALLE_EXPEDIENTE_HIST, keys=('FL_DETALLE_EXPEDIENTE', 'FE_CAMBIO')),
-
+        
         EntidadInfo(OKW.K_PRESCRIPCION, OkwQueries.K_PRESCRIPCION, keys=['FL_PRESCRIPCION']),
-        EntidadInfo(OKW.K_ESTUDIO_CLINICO_PRESCRIPCION, OkwQueries.K_ESTUDIO_CLINICO_PRESCRIPCION, keys=('FL_PRESCRIPCION', 'FL_ESTUDIO_CLINICO')),
+        EntidadInfo(OKW.K_ESTUDIO_CLINICO_PRESCRIPCION, OkwQueries.K_ESTUDIO_CLINICO_PRESCRIPCION, keys=['FL_ESTUDIO_CLINICO_PRESCRIPCION']),
 
         EntidadInfo(OKW.K_ESTUDIO_CLINICO_RESULTADO, OkwQueries.K_ESTUDIO_CLINICO_RESULTADO, keys=['FL_ESTUDIO_CLINICO_RESULTADO']),
         EntidadInfo(OKW.K_RESULTADO_ESTUDIO, OkwQueries.K_RESULTADO_ESTUDIO, keys=['FL_RESULTADO_ESTUDIO']),
-
+        
         EntidadInfo(OKW.K_EVENTO_PRESCRIPCION, OkwQueries.K_EVENTO_PRESCRIPCION, keys=['FL_EVENTO_PRESCRIPCION']),
         EntidadInfo(OKW.K_EXPLORACION_FISICA, OkwQueries.K_EXPLORACION_FISICA, keys=['FL_EXPLORACION_FISICA']),
         EntidadInfo(OKW.K_GALERIA, OkwQueries.K_GALERIA, keys=['FL_GALERIA']),
         EntidadInfo(OKW.K_HOJA_FAMILIAR, OkwQueries.K_HOJA_FAMILIAR, keys=['FL_HOJA_FAMILIAR']),
         EntidadInfo(OKW.K_LINEA_VIDA_REGISTRO_ACCION, OkwQueries.K_LINEA_VIDA_REGISTRO_ACCION, keys=['FL_REGISTRO']),
-
+        
         EntidadInfo(OKW.K_MEDICACION, OkwQueries.K_MEDICACION, keys=['FL_MEDICACION']),
         EntidadInfo(OKW.K_MEDICAMENTO_FC, OkwQueries.K_MEDICAMENTO_FC, keys=['FL_MEDICACION']),
-
+        
         EntidadInfo(OKW.K_MEDICION_ANESTESIA, OkwQueries.K_MEDICION_ANESTESIA, keys=['FL_MEDICION_ANESTESIA']),
         EntidadInfo(OKW.K_MEDICION_PACIENTE, OkwQueries.K_MEDICION_PACIENTE, keys=['FL_MEDICION_PACIENTE']),
         EntidadInfo(OKW.K_MEDICION_SENSIBILIDAD_PACIENTE, OkwQueries.K_MEDICION_SENSIBILIDAD_PACIENTE, keys=['FL_MEDICION_SENSIBILIDAD_PACIENTE']),
