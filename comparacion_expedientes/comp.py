@@ -42,14 +42,14 @@ class Comparison(object):
         self.errores = []
 
     @property
-    def is_successful(self):
-        return len(self.errores) == 0
+    def failed(self):
+        return len(self.errores) != 0
 
     @property
     def result(self):
-        return self._ok_result() \
-            if self.is_successful \
-            else _error_list(self.errores)
+        return _error_list(self.errores) \
+            if self.failed \
+            else self._ok_result()
 
     def _ok_result(self):
         cuantos = len(self.record_source.src_records)
@@ -94,7 +94,7 @@ class Comparison(object):
     def didnt_find_data(self):
         return not self.record_source.tiene_datos
 
-    def __call__(self):
+    def run(self):
         self._load_records()
         self._compare_records()
         return self
@@ -112,7 +112,8 @@ def comp(schema, rsrc, verbose=False):
     result = is_first = True
     comparisons = (Comparison(rsrc, entidad) for entidad in INFO_ENTIDADES[schema])
     for comparison in comparisons:
-        if not comparison().is_successful or verbose:
+        comparison.run()
+        if comparison.failed or verbose:
             print comparison
             result = False
         elif comparison.didnt_find_data and is_first:
