@@ -15,22 +15,23 @@ class OkwQueries:
     C_PACIENTE = 'select * from OKW.C_PACIENTE where FL_PACIENTE = {0} order by FL_PACIENTE'
     K_PACIENTE_IDENTIFICADOR = \
         'select * from OKW.K_PACIENTE_IDENTIFICADOR where FL_PACIENTE = {0} order by FL_IDENTIFICADOR'
+    K_PACIENTE_IDENTIFICADOR_FL = 'select * from OKW.K_PACIENTE_IDENTIFICADOR where FL_PACIENTE_IDENTICADOR = {0}'
 
 #end class OkwQueries
 
 
 class EntidadInfo(object):
 
-    def __init__(self, record_type, query):
+    def __init__(self, record_type, query, por_id=None):
         self.record_type = record_type
         self.query = query
+        self.por_id = por_id
 
-    @property
-    def type_name(self):
-        return self.record_type.__name__
-
-    def cargaDatos(self, contexto, folio_paciente):
+    def buscaPorPaciente(self, contexto, folio_paciente):
         return contexto.ExecuteQuery[self.record_type](self.query, folio_paciente)
+
+    def buscaPorFolio(self, contexto, folio):
+        return primero(contexto.ExecuteQuery[self.record_type](self.por_id, folio))
 
 # end class EntidadInfo
 
@@ -81,20 +82,24 @@ def obten_plaza_local(contexto):
 C_PACIENTE = EntidadInfo(record_type=OKW.C_PACIENTE, query=OkwQueries.C_PACIENTE)
 
 K_PACIENTE_IDENTIFICADOR = EntidadInfo(record_type=OKW.K_PACIENTE_IDENTIFICADOR,
-                                       query=OkwQueries.K_PACIENTE_IDENTIFICADOR)
+                                       query=OkwQueries.K_PACIENTE_IDENTIFICADOR,
+                                       por_id=OkwQueries.K_PACIENTE_IDENTIFICADOR_FL,
+                                       )
 
 
 def _carga_identificadores(contexto, fl_paciente):
-    return K_PACIENTE_IDENTIFICADOR.cargaDatos(contexto, fl_paciente)
+    return K_PACIENTE_IDENTIFICADOR.buscaPorPaciente(contexto, fl_paciente)
 
 
 def carga_paciente(contexto, fl_paciente):
-    found = primero(C_PACIENTE.cargaDatos(contexto, fl_paciente))
+    found = primero(C_PACIENTE.buscaPorPaciente(contexto, fl_paciente))
     if found:
         found = Paciente(found)
         found.identificadores = list(_carga_identificadores(contexto, fl_paciente))
     return found
 
+def identificador_por_folio(contexto, fl_ident):
+    return K_PACIENTE_IDENTIFICADOR.buscaPorFolio(contexto, fl_ident)
 
 def _diff_idents(paciente_origen, paciente_destino):
     folios = paciente_origen.ids.difference(paciente_destino.ids)

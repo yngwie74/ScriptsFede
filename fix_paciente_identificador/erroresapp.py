@@ -14,17 +14,19 @@ class ErrorEsperado(Exception):
 
 class ErrorPacienteNoEncontrado(ErrorEsperado):
 
-    LOG_FORMAT = 'Paciente %d no encontrado%s'
+    LOG_FORMAT = '%d|%s'
+    HEADER = 'FL_PACIENTE|LUGAR'
 
     def __init__(self, fl_paciente, en_federado=False):
-        ErrorEsperado.__init__(self, fl_paciente, (' en federado' if en_federado else ''))
+        ErrorEsperado.__init__(self, fl_paciente, ('federado' if en_federado else 'local'))
 
 #end class
 
 
 class ErrorNombrePacienteNoCoincide(ErrorEsperado):
 
-    LOG_FORMAT = 'FL_PACIENTE=%d|%s|%s'
+    LOG_FORMAT = '%d|%s|%s'
+    HEADER = 'FL_PACIENTE|NOMBRE LOCAL|NOMBRE FEDERADO'
 
     def __init__(self, local, federado):
         ErrorEsperado.__init__(self, local.FL_PACIENTE, local.nombre_comp, federado.nombre_comp)
@@ -34,7 +36,8 @@ class ErrorNombrePacienteNoCoincide(ErrorEsperado):
 
 class ErrorIdentificadorNoEncontrado(ErrorEsperado):
 
-    LOG_FORMAT = 'FL_PACIENTE=%d|FL_IDENTIFICADOR=%d'
+    LOG_FORMAT = '%d|%d'
+    HEADER = 'FL_PACIENTE|FL_IDENTIFICADOR'
 
     def __init__(self, fl_paciente, fl_identificador):
         ErrorEsperado.__init__(self, fl_paciente, fl_identificador)
@@ -44,7 +47,8 @@ class ErrorIdentificadorNoEncontrado(ErrorEsperado):
 
 class ErrorIdentificadorNoCoincide(ErrorEsperado):
 
-    LOG_FORMAT = 'FL_PACIENTE=%(fl_paciente)d|FL_IDENTIFICADOR=%(fl_identificador)d|%(ds_texto_local)s|%(ds_texto_federado)s'
+    LOG_FORMAT = '%(fl_paciente)d|%(fl_identificador)d|%(ds_texto_local)s|%(ds_texto_federado)s'
+    HEADER = 'FL_PACIENTE|FL_IDENTIFICADOR|DS_TEXTO LOCAL|DS_TEXTO FEDERADO'
 
     def __init__(self, local, federado):
         ErrorEsperado.__init__(self,
@@ -56,9 +60,10 @@ class ErrorIdentificadorNoCoincide(ErrorEsperado):
 #end class
 
 
-class _ErrorDeltaIdentificadores(ErrorEsperado):
+class ErrorIdentificadoresFaltantes(ErrorEsperado):
 
-    LOG_FORMAT = 'FL_PACIENTE=%d|%s'
+    LOG_FORMAT = '%d|%s'
+    HEADER = 'FL_PACIENTE|FALTANTES'
 
     def __init__(self, fl_paciente, ids_diff):
         str_diff = self._formatea_diff(ids_diff)
@@ -70,10 +75,17 @@ class _ErrorDeltaIdentificadores(ErrorEsperado):
 #end class
 
 
-class ErrorIdentificadoresSobrantes(_ErrorDeltaIdentificadores):
-    pass
+class ErrorIdentificadorYaExiste(ErrorEsperado):
 
+    LOG_FORMAT = '%(fl_paciente_identicador)d|%(fl_paciente_local)d|%(ds_texto_local)s|%(fl_paciente_federado)d|%(ds_texto_federado)s'
+    HEADER = 'FL_PACIENTE_IDENTICADOR|FL_PACIENTE LOCAL|DS_TEXTO LOCAL|FL_PACIENTE FEDERADO|DS_TEXTO FEDERADO'
 
-class ErrorIdentificadoresFaltantes(_ErrorDeltaIdentificadores):
-    pass
+    def __init__(self, local, federado):
+        ErrorEsperado.__init__(self,
+            fl_paciente_identicador=local.FL_PACIENTE_IDENTICADOR,
+            fl_paciente_local=local.FL_PACIENTE,
+            ds_texto_local=local.DS_TEXTO,
+            fl_paciente_federado=federado.FL_PACIENTE,
+            ds_texto_federado=federado.DS_TEXTO,
+            )
 

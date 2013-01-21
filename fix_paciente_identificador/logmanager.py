@@ -10,12 +10,12 @@ class LogManager(object):
 
     def __init__(self):
         self.loggers = {
-            ErrorIdentificadorNoCoincide:   Log('identificadores_diferentes'),
-            ErrorIdentificadorNoEncontrado: Log('identificadores_no_encontrados'),
-            ErrorIdentificadoresSobrantes:  Log('identificadores_sobrantes_fed'),
-            ErrorIdentificadoresFaltantes:  Log('identificadores_falantes_fed'),
-            ErrorNombrePacienteNoCoincide:  Log('pacientes_nombres_diferentes'),
-            ErrorPacienteNoEncontrado:      Log('pacientes_no_encontrados'),
+            ErrorIdentificadorNoCoincide:   Log('identificadores_diferentes', ErrorIdentificadorNoCoincide.HEADER),
+            ErrorIdentificadorNoEncontrado: Log('identificadores_no_encontrados', ErrorIdentificadorNoEncontrado.HEADER),
+            ErrorIdentificadorYaExiste:     Log('identificadores_ya_existentes', ErrorIdentificadorYaExiste.HEADER),
+            ErrorIdentificadoresFaltantes:  Log('identificadores_falantes_fed', ErrorIdentificadoresFaltantes.HEADER),
+            ErrorNombrePacienteNoCoincide:  Log('pacientes_nombres_diferentes', ErrorNombrePacienteNoCoincide.HEADER),
+            ErrorPacienteNoEncontrado:      Log('pacientes_no_encontrados', ErrorPacienteNoEncontrado.HEADER),
             }
         self.default = Log('errores')
 
@@ -42,13 +42,16 @@ class LogManager(object):
 
 class Log(object):
 
-    def __init__(self, nombre):
+    def __init__(self, nombre, header=None):
         self.nombre = '%s.log' % nombre
+        self.header = header
         self.file = None
         self.lineas = 0
 
     def open(self):
         self.file = open(self.nombre, 'w', 1)
+        if self.header:
+            self.file.write('timestamp|%s\n' % self.header)
         return self
 
     def close(self):
@@ -65,7 +68,7 @@ class Log(object):
         return DateTime.Now.ToString('yyyy-MM-dd HH:mm:ss.fff')
 
     def error(self, exception):
-        self.file.write('%s: %s\n' % (self.timestamp, exception))
+        self.file.write('%s|%s\n' % (self.timestamp, exception))
         self.file.flush()
         self.lineas += 1
 

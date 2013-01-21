@@ -9,7 +9,7 @@ import sys
 
 is_script = __name__ == '__main__'
 if is_script:
-    sys.path.append(r'C:\Users\alfredo.chavez\Proyectos\IronPython\Federado\fix_paciente_identificador\bin\Debug')
+    sys.path.append(r'C:\Users\alfredo.chavez\Proyectos\Medtzin\Comunes')
 
 import dataaccess
 import scriptgen
@@ -73,6 +73,11 @@ class CorrectorPacId(object):
         if nombre(self.local) != nombre(self.fede):
             raise ErrorNombrePacienteNoCoincide(self.local, self.fede)
 
+    def _valida_existe_local(self, identificador):
+        local = dataaccess.identificador_por_folio(self.ctx_local, identificador.FL_PACIENTE_IDENTICADOR)
+        if local:
+            raise ErrorIdentificadorYaExiste(local, fede)
+
     @log_n_continue
     def _valida_identificador(self, identificador):
         fede = self.fede.busca_id(identificador.FL_IDENTIFICADOR)
@@ -81,14 +86,17 @@ class CorrectorPacId(object):
         elif identificador.DS_TEXTO != fede.DS_TEXTO:
             raise ErrorIdentificadorNoCoincide(identificador, fede)
         elif identificador.FL_PACIENTE_IDENTICADOR != fede.FL_PACIENTE_IDENTICADOR:
+            self._valida_existe_local(fede)
             self.generador.addSynch(identificador.FL_PACIENTE_IDENTICADOR, fede)
-            return False
-        return True
+            sys.stdout.write('x')
+        else:
+            sys.stdout.write('.')
 
     @log_n_continue
     def _valida_identificadores_comunes(self):
         for identificador in self.local.ids_comunes(self.fede):
-            sys.stdout.write(self._valida_identificador(identificador) and '.' or 'x')
+            igual = self._valida_identificador(identificador)
+            sys.stdout.write('.' if igual else 'x')
 
     def _valida_identificadores_faltantes(self):
         faltantes = self.local.ids_que_te_faltan_de(self.fede)
@@ -192,10 +200,21 @@ def _get_connstr(sarg, darg, sdefault, ddefault='OKW'):
         db=_parse_arg(darg, ddefault),
         )
 
+def _check_args():
+    start = 1 if is_script else 0
+    for arg in sys.argv[start:]:
+        if arg.isdigit():
+            pass
+        elif arg in ['-', '-?']:
+            pass
+        elif any(arg.startswith('-%s:' % sfx) for sfx in ['sl', 'sr', 'dl', 'dr']):
+            pass
+        elif arg:
+            raise ValueError('El parámetro \"%s\" no se reconoce' % arg)
+
 @with_logging
 def main():
     con_str = _get_connstr('sl', 'dl', _LOCAL)
-
     with dataaccess.contexto_okw(con_str) as src_context:
 
         plaza_local = int(dataaccess.obten_plaza_local(src_context))
@@ -211,6 +230,8 @@ def main():
     print 'ok'
 
 #~ Main script
+
+_check_args()
 
 if _find_arg('-?'):
     _mostrar_ayuda()
